@@ -81,6 +81,8 @@ const goalSchema = new mongoose.Schema(
         "nlp",
         "robotics",
         "quantum_ml",
+        "programming",
+        "math",
       ],
     },
     level: {
