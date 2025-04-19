@@ -15,13 +15,7 @@ const MONGODB_URI =
 
 const users = [
   {
-    email: "student1@ucad.edu.sn", // Updated default student account
-    password: "Student123!",
-    role: "user",
-    isActive: true,
-  },
-  {
-    email: "student@ucad.edu.sn", // Keep original as backup
+    email: "student@ucad.edu.sn",
     password: "Student123!",
     role: "user",
     isActive: true,
@@ -30,24 +24,6 @@ const users = [
     email: "admin@ucad.edu.sn",
     password: "Admin123!",
     role: "admin",
-    isActive: true,
-  },
-  {
-    email: "alice@ucad.edu.sn",
-    password: "Alice123!",
-    role: "user",
-    isActive: true,
-  },
-  {
-    email: "bob@ucad.edu.sn",
-    password: "Bob123!",
-    role: "user",
-    isActive: true,
-  },
-  {
-    email: "charlie@ucad.edu.sn",
-    password: "Charlie123!",
-    role: "user",
     isActive: true,
   },
 ];
@@ -68,66 +44,10 @@ const concepts = [
     prerequisites: [],
   },
   {
-    name: "Probabilités et Statistiques",
-    description: "Concepts probabilistes pour le ML",
-    category: "math",
-    level: "intermediate",
-    prerequisites: [],
-  },
-  {
-    name: "Optimisation",
-    description: "Méthodes d'optimisation pour le ML",
-    category: "math",
-    level: "advanced",
-    prerequisites: [],
-  },
-  {
     name: "Python pour l'IA",
     description: "Programmation Python orientée data science",
     category: "programming",
     level: "basic",
-    prerequisites: [],
-  },
-  {
-    name: "Scikit-learn",
-    description: "Utilisation de scikit-learn pour le ML",
-    category: "ml",
-    level: "intermediate",
-    prerequisites: [],
-  },
-  {
-    name: "TensorFlow",
-    description: "Deep learning avec TensorFlow",
-    category: "dl",
-    level: "intermediate",
-    prerequisites: [],
-  },
-  {
-    name: "PyTorch",
-    description: "Deep learning avec PyTorch",
-    category: "dl",
-    level: "intermediate",
-    prerequisites: [],
-  },
-  {
-    name: "Computer Vision Basics",
-    description: "Fondamentaux du traitement d'images",
-    category: "computer_vision",
-    level: "basic",
-    prerequisites: [],
-  },
-  {
-    name: "NLP Fundamentals",
-    description: "Bases du traitement du langage naturel",
-    category: "nlp",
-    level: "basic",
-    prerequisites: [],
-  },
-  {
-    name: "MLOps",
-    description: "Déploiement et maintenance de modèles ML",
-    category: "mlops",
-    level: "advanced",
     prerequisites: [],
   },
 ];
@@ -200,246 +120,10 @@ const goals = [
       url: "https://ucad.sn/certifications/ml-pro",
     },
   },
-  {
-    title: "Deep Learning Specialist",
-    description: "Maîtrisez les architectures de réseaux de neurones avancées",
-    category: "dl",
-    level: "advanced",
-    estimatedDuration: 16,
-    prerequisites: [
-      {
-        category: "math",
-        skills: [
-          { name: "Algèbre linéaire", level: "advanced" },
-          { name: "Calcul différentiel", level: "intermediate" },
-        ],
-      },
-      {
-        category: "programming",
-        skills: [
-          { name: "Python", level: "advanced" },
-          { name: "PyTorch", level: "intermediate" },
-        ],
-      },
-    ],
-    modules: [
-      {
-        title: "Architectures CNN",
-        description: "Réseaux de neurones convolutifs",
-        duration: 25,
-        skills: [
-          { name: "PyTorch", level: "intermediate" },
-          { name: "CNN", level: "advanced" },
-        ],
-        resources: [
-          {
-            title: "Deep Learning Book",
-            type: "book",
-            url: "https://www.deeplearningbook.org/",
-            duration: 180,
-          },
-          {
-            title: "CNN Architectures",
-            type: "video",
-            url: "https://www.coursera.org/learn/convolutional-neural-networks",
-            duration: 120,
-          },
-        ],
-        validationCriteria: [
-          "Implémenter une architecture CNN",
-          "Optimiser les hyperparamètres",
-        ],
-      },
-    ],
-    careerOpportunities: [
-      {
-        title: "DL Research Engineer",
-        description: "R&D en deep learning",
-        averageSalary: "60-90k€/an",
-        companies: ["DeepMind", "OpenAI", "Google Brain"],
-      },
-    ],
-  },
-  {
-    title: "Computer Vision Expert",
-    description: "Spécialisez-vous en vision par ordinateur",
-    category: "computer_vision",
-    level: "advanced",
-    estimatedDuration: 14,
-    prerequisites: [
-      {
-        category: "math",
-        skills: [
-          { name: "Algèbre linéaire", level: "advanced" },
-          { name: "Convolution", level: "intermediate" },
-        ],
-      },
-      {
-        category: "programming",
-        skills: [
-          { name: "Python", level: "advanced" },
-          { name: "OpenCV", level: "intermediate" },
-        ],
-      },
-    ],
-    modules: [
-      {
-        title: "Détection d'objets",
-        description: "Techniques modernes de détection d'objets",
-        duration: 30,
-        skills: [
-          { name: "YOLO", level: "advanced" },
-          { name: "PyTorch", level: "intermediate" },
-        ],
-        resources: [
-          {
-            title: "Object Detection Course",
-            type: "course",
-            url: "https://www.coursera.org/learn/object-detection",
-            duration: 150,
-          },
-        ],
-        validationCriteria: [
-          "Implémenter YOLO",
-          "Fine-tuner sur un dataset custom",
-        ],
-      },
-    ],
-    careerOpportunities: [
-      {
-        title: "Computer Vision Engineer",
-        description: "Développement de solutions de vision par ordinateur",
-        averageSalary: "55-85k€/an",
-        companies: ["Tesla", "NVIDIA", "Intel"],
-      },
-    ],
-  },
-];
-
-const assessments = [
-  {
-    title: "Évaluation ML Fondamentaux",
-    category: "ml",
-    difficulty: "basic",
-    questions: [
-      {
-        text: "Quelle est la différence entre l'apprentissage supervisé et non supervisé ?",
-        options: [
-          {
-            text: "L'apprentissage supervisé utilise des données étiquetées, l'apprentissage non supervisé non",
-            isCorrect: true,
-          },
-          {
-            text: "L'apprentissage supervisé est plus rapide que l'apprentissage non supervisé",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "L'apprentissage supervisé nécessite des données étiquetées pour entraîner le modèle, tandis que l'apprentissage non supervisé trouve des patterns dans des données non étiquetées.",
-      },
-      {
-        text: "Qu'est-ce que le surapprentissage (overfitting) ?",
-        options: [
-          {
-            text: "Le modèle apprend trop bien les données d'entraînement et généralise mal",
-            isCorrect: true,
-          },
-          {
-            text: "Le modèle n'apprend pas assez des données d'entraînement",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le surapprentissage se produit quand un modèle apprend trop spécifiquement les données d'entraînement et perd en capacité de généralisation.",
-      },
-    ],
-  },
-  {
-    title: "Évaluation Deep Learning",
-    category: "dl",
-    difficulty: "intermediate",
-    questions: [
-      {
-        text: "Quel est le rôle de la fonction d'activation dans un réseau de neurones ?",
-        options: [
-          {
-            text: "Introduire de la non-linéarité dans le réseau",
-            isCorrect: true,
-          },
-          {
-            text: "Accélérer l'entraînement du modèle",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Les fonctions d'activation introduisent des non-linéarités nécessaires pour que le réseau puisse apprendre des patterns complexes.",
-      },
-      {
-        text: "Qu'est-ce que le dropout ?",
-        options: [
-          {
-            text: "Une technique de régularisation qui désactive aléatoirement des neurones",
-            isCorrect: true,
-          },
-          {
-            text: "Une fonction d'activation",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le dropout est une technique de régularisation qui aide à prévenir le surapprentissage en désactivant aléatoirement des neurones pendant l'entraînement.",
-      },
-    ],
-  },
-  {
-    title: "Évaluation Computer Vision",
-    category: "computer_vision",
-    difficulty: "advanced",
-    questions: [
-      {
-        text: "Quel est le rôle principal des filtres de convolution ?",
-        options: [
-          {
-            text: "Extraire des caractéristiques spécifiques des images",
-            isCorrect: true,
-          },
-          {
-            text: "Réduire la taille des images",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Les filtres de convolution permettent d'extraire des caractéristiques spécifiques comme les bords, les textures, etc.",
-      },
-    ],
-  },
-  {
-    title: "Évaluation NLP",
-    category: "nlp",
-    difficulty: "intermediate",
-    questions: [
-      {
-        text: "Qu'est-ce que le word embedding ?",
-        options: [
-          {
-            text: "Une représentation vectorielle des mots",
-            isCorrect: true,
-          },
-          {
-            text: "Une technique de compression de texte",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le word embedding transforme les mots en vecteurs denses qui capturent leur sens et leurs relations.",
-      },
-    ],
-  },
 ];
 
 const quizzes = [
   {
-    moduleId: "0",
     title: "Quiz Introduction au ML",
     description: "Validez vos connaissances sur les fondamentaux du ML",
     timeLimit: 1800,
@@ -460,13 +144,9 @@ const quizzes = [
             text: "Mean Squared Error",
             isCorrect: false,
           },
-          {
-            text: "R-squared",
-            isCorrect: false,
-          },
         ],
         explanation:
-          "Le F1-Score est plus approprié car il prend en compte à la fois la précision et le rappel, particulièrement important pour les datasets déséquilibrés.",
+          "Le F1-Score est plus approprié car il prend en compte à la fois la précision et le rappel.",
       },
       {
         text: "Quel algorithme est un exemple d'apprentissage non supervisé ?",
@@ -483,181 +163,34 @@ const quizzes = [
             text: "Régression logistique",
             isCorrect: false,
           },
-          {
-            text: "Support Vector Machine",
-            isCorrect: false,
-          },
         ],
         explanation:
-          "K-means est un algorithme de clustering qui ne nécessite pas de données étiquetées, ce qui en fait un exemple d'apprentissage non supervisé.",
-      },
-      {
-        text: "Quelle est la principale différence entre la validation croisée et le hold-out set ?",
-        options: [
-          {
-            text: "La validation croisée utilise plusieurs partitions des données pour une évaluation plus robuste",
-            isCorrect: true,
-          },
-          {
-            text: "La validation croisée est plus rapide que le hold-out set",
-            isCorrect: false,
-          },
-          {
-            text: "Le hold-out set donne toujours de meilleurs résultats",
-            isCorrect: false,
-          },
-          {
-            text: "Il n'y a pas de différence significative",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "La validation croisée divise les données en k partitions et utilise chaque partition comme ensemble de test, offrant une évaluation plus robuste du modèle.",
+          "K-means est un algorithme de clustering qui ne nécessite pas de données étiquetées.",
       },
     ],
   },
+];
+
+const assessments = [
   {
-    moduleId: "0",
-    title: "Quiz Architectures CNN",
-    description:
-      "Évaluez votre compréhension des réseaux de neurones convolutifs",
-    timeLimit: 2400,
-    passingScore: 75,
+    title: "Évaluation ML Fondamentaux",
+    category: "ml",
+    difficulty: "basic",
     questions: [
       {
-        text: "Quel est le rôle principal des couches de convolution dans un CNN ?",
+        text: "Quelle est la différence entre l'apprentissage supervisé et non supervisé ?",
         options: [
           {
-            text: "Extraire des caractéristiques hiérarchiques des images",
+            text: "L'apprentissage supervisé utilise des données étiquetées, l'apprentissage non supervisé non",
             isCorrect: true,
           },
           {
-            text: "Réduire la taille des images",
-            isCorrect: false,
-          },
-          {
-            text: "Normaliser les valeurs des pixels",
-            isCorrect: false,
-          },
-          {
-            text: "Augmenter la résolution des images",
+            text: "L'apprentissage supervisé est plus rapide",
             isCorrect: false,
           },
         ],
         explanation:
-          "Les couches de convolution permettent d'extraire des caractéristiques de plus en plus complexes et abstraites à mesure qu'on avance dans le réseau.",
-      },
-      {
-        text: "Pourquoi utilise-t-on le pooling dans les CNN ?",
-        options: [
-          {
-            text: "Réduire la dimensionnalité et rendre le modèle plus robuste",
-            isCorrect: true,
-          },
-          {
-            text: "Augmenter la taille des feature maps",
-            isCorrect: false,
-          },
-          {
-            text: "Remplacer les couches de convolution",
-            isCorrect: false,
-          },
-          {
-            text: "Ajouter plus de paramètres au modèle",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le pooling réduit la taille des feature maps tout en préservant les informations importantes, ce qui aide à réduire le surapprentissage.",
-      },
-    ],
-  },
-  {
-    moduleId: "0",
-    title: "Quiz Détection d'Objets",
-    description:
-      "Testez vos connaissances sur les techniques de détection d'objets",
-    timeLimit: 1800,
-    passingScore: 70,
-    questions: [
-      {
-        text: "Quelle est la principale innovation de YOLO par rapport aux méthodes traditionnelles ?",
-        options: [
-          {
-            text: "La détection en une seule passe sur l'image",
-            isCorrect: true,
-          },
-          {
-            text: "Une meilleure précision que tous les autres modèles",
-            isCorrect: false,
-          },
-          {
-            text: "L'utilisation exclusive de CNN",
-            isCorrect: false,
-          },
-          {
-            text: "La suppression des anchor boxes",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "YOLO (You Only Look Once) traite l'image en une seule passe, ce qui le rend beaucoup plus rapide que les approches à deux étapes comme R-CNN.",
-      },
-    ],
-  },
-  {
-    moduleId: "0",
-    title: "Quiz NLP Avancé",
-    description: "Testez vos connaissances en NLP",
-    timeLimit: 1800,
-    passingScore: 70,
-    questions: [
-      {
-        text: "Quelle est la principale innovation des transformers ?",
-        options: [
-          {
-            text: "Le mécanisme d'attention",
-            isCorrect: true,
-          },
-          {
-            text: "Les réseaux récurrents",
-            isCorrect: false,
-          },
-          {
-            text: "Le word2vec",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le mécanisme d'attention permet aux transformers de traiter efficacement les dépendances à long terme dans les séquences.",
-      },
-    ],
-  },
-  {
-    moduleId: "0",
-    title: "Quiz MLOps",
-    description: "Évaluez vos connaissances en MLOps",
-    timeLimit: 1800,
-    passingScore: 75,
-    questions: [
-      {
-        text: "Quel est l'intérêt principal du versioning des données ?",
-        options: [
-          {
-            text: "Assurer la reproductibilité des expériences",
-            isCorrect: true,
-          },
-          {
-            text: "Réduire l'espace de stockage",
-            isCorrect: false,
-          },
-          {
-            text: "Accélérer l'entraînement",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le versioning des données permet de reproduire exactement les conditions d'entraînement d'un modèle.",
+          "L'apprentissage supervisé nécessite des données étiquetées pour entraîner le modèle.",
       },
     ],
   },
@@ -687,34 +220,21 @@ async function populateDatabase() {
     const createdGoals = await Goal.create(goals);
     logger.info(`Created ${createdGoals.length} goals`);
 
-    // Map quizzes to modules more accurately
+    // Créer les quiz avec les bons IDs de modules
     const quizzesWithModuleIds = [];
 
-    createdGoals.forEach(goal => {
-      goal.modules.forEach((module, moduleIndex) => {
-        // Find matching quiz for this module based on title/content
-        const matchingQuiz = quizzes.find(quiz => {
-          if (goal.category === "ml" && quiz.title.includes("ML")) {
-            return true;
-          } else if (goal.category === "dl" && quiz.title.includes("CNN")) {
-            return true;
-          } else if (
-            goal.category === "computer_vision" &&
-            quiz.title.includes("Détection")
-          ) {
-            return true;
-          }
-          return false;
-        });
-
-        if (matchingQuiz) {
-          quizzesWithModuleIds.push({
-            ...matchingQuiz,
-            moduleId: module._id.toString(), // Use actual module ID
-          });
-        }
-      });
-    });
+    for (const goal of createdGoals) {
+      for (const module of goal.modules) {
+        // Pour chaque module, créer un quiz correspondant
+        const quiz = {
+          ...quizzes[0], // Utiliser le quiz template
+          moduleId: module._id.toString(),
+          title: `Quiz - ${module.title}`,
+          description: `Évaluation des connaissances - ${module.title}`,
+        };
+        quizzesWithModuleIds.push(quiz);
+      }
+    }
 
     const createdQuizzes = await Quiz.create(quizzesWithModuleIds);
     logger.info(`Created ${createdQuizzes.length} quizzes`);
@@ -722,7 +242,6 @@ async function populateDatabase() {
     const createdAssessments = await Assessment.create(assessments);
     logger.info(`Created ${createdAssessments.length} assessments`);
 
-    // Create profiles for all users
     const userProfiles = createdUsers
       .filter(user => user.role === "user")
       .map(user => ({

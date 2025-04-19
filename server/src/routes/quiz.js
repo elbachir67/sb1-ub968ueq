@@ -18,21 +18,34 @@ router.get(
         `Fetching quiz for pathway ${pathwayId} and module ${moduleId}`
       );
 
-      // Vérifier que l'utilisateur a accès à ce parcours
+      // Récupérer le parcours pour obtenir l'ID réel du module
       const pathway = await Pathway.findOne({
         _id: pathwayId,
         userId: req.user.id,
-      });
+      }).populate("goalId");
 
       if (!pathway) {
         logger.warn(`Pathway ${pathwayId} not found for user ${req.user.id}`);
         return res.status(404).json({ error: "Parcours non trouvé" });
       }
 
-      // Récupérer le quiz
-      const quiz = await Quiz.findOne({ moduleId });
+      // Obtenir le module correspondant à l'index
+      const moduleIndex = parseInt(moduleId);
+      if (isNaN(moduleIndex) || moduleIndex >= pathway.moduleProgress.length) {
+        logger.warn(`Invalid module index ${moduleId}`);
+        return res.status(404).json({ error: "Module non trouvé" });
+      }
+
+      const module = pathway.goalId.modules[moduleIndex];
+      if (!module) {
+        logger.warn(`Module not found at index ${moduleIndex}`);
+        return res.status(404).json({ error: "Module non trouvé" });
+      }
+
+      // Récupérer le quiz avec l'ID du module
+      const quiz = await Quiz.findOne({ moduleId: module._id.toString() });
       if (!quiz) {
-        logger.warn(`Quiz not found for module ${moduleId}`);
+        logger.warn(`Quiz not found for module ${module._id}`);
         return res.status(404).json({ error: "Quiz non trouvé" });
       }
 
@@ -40,8 +53,8 @@ router.get(
       const formattedQuestions = quiz.questions.map(q => ({
         id: q._id.toString(),
         text: q.text,
-        category: q.category || "general", // Catégorie par défaut si non définie
-        difficulty: q.difficulty || "intermediate", // Difficulté par défaut si non définie
+        category: q.category || "general",
+        difficulty: q.difficulty || "intermediate",
         options: q.options.map(opt => ({
           id: opt._id.toString(),
           text: opt.text,
@@ -56,7 +69,7 @@ router.get(
         description: quiz.description,
         timeLimit: quiz.timeLimit,
         questions: formattedQuestions,
-        passingScore: quiz.passingScore || 70, // Score de passage par défaut si non défini
+        passingScore: quiz.passingScore || 70,
       });
     } catch (error) {
       logger.error("Error fetching quiz:", error);
@@ -80,18 +93,24 @@ router.post(
         recommendations,
       } = req.body;
 
-      // Vérifier que l'utilisateur a accès à ce parcours
+      // Récupérer le parcours et le module
       const pathway = await Pathway.findOne({
         _id: pathwayId,
         userId: req.user.id,
-      });
+      }).populate("goalId");
 
       if (!pathway) {
         return res.status(404).json({ error: "Parcours non trouvé" });
       }
 
+      const moduleIndex = parseInt(moduleId);
+      const module = pathway.goalId.modules[moduleIndex];
+      if (!module) {
+        return res.status(404).json({ error: "Module non trouvé" });
+      }
+
       // Récupérer le quiz
-      const quiz = await Quiz.findOne({ moduleId });
+      const quiz = await Quiz.findOne({ moduleId: module._id.toString() });
       if (!quiz) {
         return res.status(404).json({ error: "Quiz non trouvé" });
       }
@@ -101,7 +120,7 @@ router.post(
         userId: req.user.id,
         quizId: quiz._id,
         pathwayId,
-        moduleId,
+        moduleId: module._id.toString(),
         score,
         answers,
         totalTimeSpent,
@@ -112,10 +131,6 @@ router.post(
       await attempt.save();
 
       // Mettre à jour le statut du quiz dans le parcours
-      const moduleIndex = pathway.moduleProgress.findIndex(
-        m => m.moduleIndex.toString() === moduleId
-      );
-
       if (moduleIndex > -1) {
         pathway.moduleProgress[moduleIndex].quiz = {
           completed: true,
@@ -180,22 +195,18 @@ router.post(
     try {
       const { pathwayId, moduleId } = req.params;
 
-      // Vérifier que l'utilisateur a accès à ce parcours
       const pathway = await Pathway.findOne({
         _id: pathwayId,
         userId: req.user.id,
-      });
+      }).populate("goalId");
 
       if (!pathway) {
         return res.status(404).json({ error: "Parcours non trouvé" });
       }
 
-      // Trouver le module
-      const moduleIndex = pathway.moduleProgress.findIndex(
-        m => m.moduleIndex.toString() === moduleId
-      );
-
-      if (moduleIndex === -1) {
+      const moduleIndex = parseInt(moduleId);
+      const module = pathway.goalId.modules[moduleIndex];
+      if (!module) {
         return res.status(404).json({ error: "Module non trouvé" });
       }
 
@@ -224,7 +235,7 @@ router.post(
       await QuizAttempt.deleteMany({
         userId: req.user.id,
         pathwayId,
-        moduleId,
+        moduleId: module._id.toString(),
       });
 
       res.json({
@@ -247,13 +258,28 @@ router.get(
     try {
       const { pathwayId, moduleId } = req.params;
 
+      const pathway = await Pathway.findOne({
+        _id: pathwayId,
+        userId: req.user.id,
+      }).populate("goalId");
+
+      if (!pathway) {
+        return res.status(404).json({ error: "Parcours non trouvé" });
+      }
+
+      const moduleIndex = parseInt(moduleId);
+      const module = pathway.goalId.modules[moduleIndex];
+      if (!module) {
+        return res.status(404).json({ error: "Module non trouvé" });
+      }
+
       const attempts = await QuizAttempt.find({
         userId: req.user.id,
         pathwayId,
-        moduleId,
+        moduleId: module._id.toString(),
       })
         .sort("-completedAt")
-        .select("-answers"); // Ne pas renvoyer les réponses détaillées
+        .select("-answers");
 
       res.json(attempts);
     } catch (error) {
