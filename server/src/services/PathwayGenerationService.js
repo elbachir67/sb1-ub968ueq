@@ -22,17 +22,28 @@ class PathwayGenerationService {
       // Vérifier les prérequis
       const prerequisites = await this.checkPrerequisites(profile, goal);
 
-      // Adapter les modules selon le profil
+      // Calculer la charge cognitive optimale
+      const cognitiveLoad = this.calculateOptimalCognitiveLoad(profile);
+
+      // Adapter les modules selon le profil et la charge cognitive
       const adaptedModules = this.adaptModules(
         goal.modules,
         profile,
-        prerequisites
+        prerequisites,
+        cognitiveLoad
       );
 
       // Générer les recommandations initiales
       const recommendations = this.generateInitialRecommendations(
         profile,
-        goal
+        goal,
+        cognitiveLoad
+      );
+
+      // Estimer les ressources nécessaires
+      const resourceEstimation = this.estimateRequiredResources(
+        adaptedModules,
+        profile
       );
 
       return {
@@ -41,6 +52,8 @@ class PathwayGenerationService {
         adaptedModules,
         recommendations,
         prerequisites,
+        resourceEstimation,
+        cognitiveLoad,
       };
     } catch (error) {
       logger.error("Error generating pathway:", error);
@@ -49,270 +62,295 @@ class PathwayGenerationService {
   }
 
   /**
-   * Vérifie les prérequis et identifie les lacunes
+   * Calcule la charge cognitive optimale pour l'apprenant
    */
-  static async checkPrerequisites(profile, goal) {
-    const prerequisites = {
-      met: [],
-      missing: [],
-      recommended: [],
+  static calculateOptimalCognitiveLoad(profile) {
+    // Analyser l'historique d'apprentissage
+    const learningHistory = profile.assessments || [];
+
+    // Calculer la vitesse moyenne d'apprentissage
+    const learningSpeed = this.calculateLearningSpeed(learningHistory);
+
+    // Calculer le taux de rétention
+    const retentionRate = this.calculateRetentionRate(learningHistory);
+
+    // Déterminer la charge cognitive optimale
+    return {
+      contentPerStep: this.determineOptimalContentAmount(
+        learningSpeed,
+        retentionRate
+      ),
+      practiceFrequency: this.determineOptimalPracticeFrequency(retentionRate),
+      breakFrequency: this.determineOptimalBreakFrequency(learningSpeed),
+    };
+  }
+
+  /**
+   * Calcule la vitesse d'apprentissage basée sur l'historique
+   */
+  static calculateLearningSpeed(history) {
+    if (!history.length) return "medium";
+
+    const completionTimes = history.map(assessment => {
+      return {
+        timeSpent: assessment.responses.reduce(
+          (sum, r) => sum + r.timeSpent,
+          0
+        ),
+        score: assessment.score,
+      };
+    });
+
+    const averageTimePerPoint =
+      completionTimes.reduce((sum, item) => {
+        return sum + item.timeSpent / item.score;
+      }, 0) / completionTimes.length;
+
+    if (averageTimePerPoint < 30) return "fast";
+    if (averageTimePerPoint > 60) return "slow";
+    return "medium";
+  }
+
+  /**
+   * Calcule le taux de rétention basé sur l'historique
+   */
+  static calculateRetentionRate(history) {
+    if (!history.length) return 0.7; // Taux par défaut
+
+    const assessmentsByTopic = {};
+    history.forEach(assessment => {
+      if (!assessmentsByTopic[assessment.category]) {
+        assessmentsByTopic[assessment.category] = [];
+      }
+      assessmentsByTopic[assessment.category].push(assessment);
+    });
+
+    let totalRetention = 0;
+    let topicCount = 0;
+
+    Object.values(assessmentsByTopic).forEach(assessments => {
+      if (assessments.length > 1) {
+        const sorted = assessments.sort(
+          (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
+        );
+        const retention = sorted[0].score / sorted[1].score;
+        totalRetention += retention;
+        topicCount++;
+      }
+    });
+
+    return topicCount > 0 ? totalRetention / topicCount : 0.7;
+  }
+
+  /**
+   * Détermine la quantité optimale de contenu par étape
+   */
+  static determineOptimalContentAmount(learningSpeed, retentionRate) {
+    const baseAmount =
+      {
+        fast: 5,
+        medium: 3,
+        slow: 2,
+      }[learningSpeed] || 3;
+
+    return Math.round(baseAmount * retentionRate);
+  }
+
+  /**
+   * Détermine la fréquence optimale des exercices pratiques
+   */
+  static determineOptimalPracticeFrequency(retentionRate) {
+    if (retentionRate < 0.6) return "high"; // Pratique après chaque concept
+    if (retentionRate < 0.8) return "medium"; // Pratique après 2-3 concepts
+    return "low"; // Pratique après chaque module
+  }
+
+  /**
+   * Détermine la fréquence optimale des pauses
+   */
+  static determineOptimalBreakFrequency(learningSpeed) {
+    return (
+      {
+        fast: 45, // minutes
+        medium: 30,
+        slow: 20,
+      }[learningSpeed] || 30
+    );
+  }
+
+  /**
+   * Estime les ressources nécessaires pour le parcours
+   */
+  static estimateRequiredResources(modules, profile) {
+    let totalTime = 0;
+    let requiredResources = {
+      free: [],
+      premium: [],
     };
 
-    // Vérifier chaque concept requis
-    for (const concept of goal.requiredConcepts) {
-      const hasPrerequisite = await this.checkConceptPrerequisite(
-        profile,
-        concept
-      );
+    modules.forEach(module => {
+      // Estimer le temps nécessaire selon le profil
+      const timeMultiplier = this.calculateTimeMultiplier(module, profile);
+      totalTime += module.duration * timeMultiplier;
 
-      if (hasPrerequisite) {
-        prerequisites.met.push(concept);
-      } else {
-        prerequisites.missing.push(concept);
-      }
-    }
+      // Catégoriser les ressources
+      module.resources.forEach(resource => {
+        if (resource.isPremium) {
+          requiredResources.premium.push(resource);
+        } else {
+          requiredResources.free.push(resource);
+        }
+      });
+    });
 
-    // Générer des recommandations pour les prérequis manquants
-    prerequisites.recommended = this.generatePrerequisiteRecommendations(
-      prerequisites.missing,
+    return {
+      estimatedTime: totalTime,
+      resources: requiredResources,
+      recommendedSchedule: this.generateRecommendedSchedule(totalTime, profile),
+    };
+  }
+
+  /**
+   * Calcule le multiplicateur de temps selon le profil
+   */
+  static calculateTimeMultiplier(module, profile) {
+    const baseMultiplier =
+      {
+        beginner: 1.3,
+        intermediate: 1,
+        advanced: 0.8,
+      }[profile.preferences.mathLevel] || 1;
+
+    // Ajuster selon l'historique des performances
+    const performanceAdjustment = this.calculatePerformanceAdjustment(
+      module.category,
       profile
     );
 
-    return prerequisites;
+    return baseMultiplier * performanceAdjustment;
   }
 
   /**
-   * Vérifie si un concept prérequis est maîtrisé
+   * Calcule l'ajustement basé sur les performances
    */
-  static async checkConceptPrerequisite(profile, concept) {
-    // Vérifier les évaluations passées
+  static calculatePerformanceAdjustment(category, profile) {
     const relevantAssessments = profile.assessments.filter(
-      assessment => assessment.category === concept.category
+      a => a.category === category
     );
 
-    if (relevantAssessments.length === 0) {
-      return false;
-    }
+    if (!relevantAssessments.length) return 1;
 
-    // Calculer le score moyen pour la catégorie
     const averageScore =
-      relevantAssessments.reduce((acc, curr) => acc + curr.score, 0) /
+      relevantAssessments.reduce((sum, a) => sum + a.score, 0) /
       relevantAssessments.length;
 
-    // Vérifier le niveau requis
-    const requiredScore = {
-      basic: 60,
-      intermediate: 75,
-      advanced: 85,
-    }[concept.level];
-
-    return averageScore >= requiredScore;
+    if (averageScore > 85) return 0.8; // Excellent - accélérer
+    if (averageScore < 60) return 1.2; // Difficultés - ralentir
+    return 1;
   }
 
   /**
-   * Adapte les modules selon le profil de l'apprenant
+   * Génère un planning recommandé
    */
-  static adaptModules(modules, profile, prerequisites) {
-    return modules.map(module => {
-      // Adapter la durée selon le niveau
-      const durationMultiplier = this.calculateDurationMultiplier(
-        profile,
-        module.skills
-      );
+  static generateRecommendedSchedule(totalTime, profile) {
+    const hoursPerWeek = this.estimateAvailableHours(profile);
+    const weeksNeeded = Math.ceil(totalTime / hoursPerWeek);
 
-      // Filtrer et ordonner les ressources
-      const adaptedResources = this.adaptResources(
-        module.resources,
-        profile,
-        prerequisites
-      );
-
-      return {
-        ...module,
-        duration: Math.round(module.duration * durationMultiplier),
-        resources: adaptedResources,
-        isOptional: this.isModuleOptional(module, prerequisites),
-      };
-    });
-  }
-
-  /**
-   * Calcule le multiplicateur de durée selon le niveau
-   */
-  static calculateDurationMultiplier(profile, moduleSkills) {
-    const skillLevels = {
-      beginner: 1.3,
-      intermediate: 1,
-      advanced: 0.8,
-      expert: 0.7,
+    return {
+      weeksNeeded,
+      hoursPerWeek,
+      recommendedSessions: this.generateSessionPlan(hoursPerWeek, profile),
     };
+  }
 
-    // Vérifier le niveau pour chaque compétence
-    const relevantSkills = moduleSkills.filter(
-      skill =>
-        skill.name.toLowerCase().includes("math") ||
-        skill.name.toLowerCase().includes("programming")
-    );
+  /**
+   * Estime les heures disponibles par semaine
+   */
+  static estimateAvailableHours(profile) {
+    // Par défaut 10h/semaine, ajuster selon le profil
+    const baseHours = 10;
 
-    if (relevantSkills.length === 0) {
-      return 1;
+    // Ajuster selon l'historique d'engagement
+    const engagementMultiplier = this.calculateEngagementMultiplier(profile);
+
+    return Math.round(baseHours * engagementMultiplier);
+  }
+
+  /**
+   * Calcule le multiplicateur d'engagement
+   */
+  static calculateEngagementMultiplier(profile) {
+    if (!profile.assessments.length) return 1;
+
+    // Analyser la régularité des sessions
+    const sessionRegularity = this.analyzeSessionRegularity(profile);
+
+    if (sessionRegularity > 0.8) return 1.2; // Très régulier
+    if (sessionRegularity < 0.4) return 0.8; // Peu régulier
+    return 1;
+  }
+
+  /**
+   * Analyse la régularité des sessions
+   */
+  static analyzeSessionRegularity(profile) {
+    const sessions = profile.assessments.map(a => new Date(a.completedAt));
+    if (sessions.length < 2) return 1;
+
+    sessions.sort((a, b) => a - b);
+
+    // Calculer les intervalles entre sessions
+    const intervals = [];
+    for (let i = 1; i < sessions.length; i++) {
+      intervals.push(sessions[i] - sessions[i - 1]);
     }
 
-    // Calculer le multiplicateur moyen
-    const multipliers = relevantSkills.map(skill => {
-      const userLevel = skill.name.toLowerCase().includes("math")
-        ? profile.preferences.mathLevel
-        : profile.preferences.programmingLevel;
+    // Calculer la variance des intervalles
+    const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+    const variance =
+      intervals.reduce((sum, interval) => {
+        return sum + Math.pow(interval - avgInterval, 2);
+      }, 0) / intervals.length;
 
-      return skillLevels[userLevel] || 1;
-    });
-
-    return multipliers.reduce((a, b) => a + b) / multipliers.length;
+    // Normaliser la régularité (0-1)
+    return 1 / (1 + Math.sqrt(variance) / avgInterval);
   }
 
   /**
-   * Adapte les ressources selon le profil
+   * Génère un plan de sessions recommandé
    */
-  static adaptResources(resources, profile, prerequisites) {
-    // Filtrer les ressources selon le niveau
-    let adaptedResources = resources.filter(resource =>
-      this.isResourceAppropriate(resource, profile)
-    );
+  static generateSessionPlan(hoursPerWeek, profile) {
+    const sessionsPerWeek = Math.ceil(hoursPerWeek / 2); // Max 2h par session
+    const sessions = [];
 
-    // Ajouter des ressources de rattrapage si nécessaire
-    if (prerequisites.missing.length > 0) {
-      adaptedResources = [
-        ...this.generateCatchUpResources(prerequisites.missing),
-        ...adaptedResources,
-      ];
-    }
-
-    // Trier par pertinence
-    return this.sortResourcesByRelevance(adaptedResources, profile);
-  }
-
-  /**
-   * Vérifie si une ressource est appropriée pour le niveau
-   */
-  static isResourceAppropriate(resource, profile) {
-    const levelMapping = {
-      beginner: ["basic"],
-      intermediate: ["basic", "intermediate"],
-      advanced: ["intermediate", "advanced"],
-      expert: ["advanced"],
-    };
-
-    const appropriateLevels =
-      levelMapping[profile.preferences.mathLevel] ||
-      levelMapping["intermediate"];
-
-    return appropriateLevels.includes(resource.level);
-  }
-
-  /**
-   * Génère des ressources de rattrapage
-   */
-  static generateCatchUpResources(missingPrerequisites) {
-    return missingPrerequisites.map(prerequisite => ({
-      title: `Introduction à ${prerequisite.name}`,
-      type: "tutorial",
-      level: "basic",
-      duration: 60,
-      isCatchUp: true,
-    }));
-  }
-
-  /**
-   * Trie les ressources par pertinence
-   */
-  static sortResourcesByRelevance(resources, profile) {
-    return resources.sort((a, b) => {
-      // Priorité aux ressources de rattrapage
-      if (a.isCatchUp && !b.isCatchUp) return -1;
-      if (!a.isCatchUp && b.isCatchUp) return 1;
-
-      // Ensuite par niveau
-      const levelOrder = { basic: 0, intermediate: 1, advanced: 2 };
-      return levelOrder[a.level] - levelOrder[b.level];
-    });
-  }
-
-  /**
-   * Détermine si un module est optionnel
-   */
-  static isModuleOptional(module, prerequisites) {
-    // Un module est optionnel si tous ses prérequis sont déjà maîtrisés
-    const modulePrerequisites = module.skills.map(skill => skill.name);
-    const metPrerequisites = prerequisites.met.map(p => p.name);
-
-    return modulePrerequisites.every(prereq =>
-      metPrerequisites.includes(prereq)
-    );
-  }
-
-  /**
-   * Génère les recommandations initiales
-   */
-  static generateInitialRecommendations(profile, goal) {
-    const recommendations = [];
-
-    // Recommandations basées sur les prérequis
-    if (profile.preferences.mathLevel === "beginner") {
-      recommendations.push({
-        type: "resource",
-        description: "Renforcer les bases mathématiques",
-        priority: "high",
-        status: "pending",
+    for (let i = 0; i < sessionsPerWeek; i++) {
+      sessions.push({
+        duration: 120, // minutes
+        type: i % 2 === 0 ? "learning" : "practice",
+        intensity: this.determineOptimalIntensity(profile),
       });
     }
 
-    // Recommandations basées sur le domaine
-    if (goal.category === profile.preferences.preferredDomain) {
-      recommendations.push({
-        type: "practice",
-        description:
-          "Projet pratique recommandé dans votre domaine de prédilection",
-        priority: "medium",
-        status: "pending",
-      });
-    }
-
-    return recommendations;
+    return sessions;
   }
 
   /**
-   * Génère des recommandations pour les prérequis manquants
+   * Détermine l'intensité optimale des sessions
    */
-  static generatePrerequisiteRecommendations(missingPrerequisites, profile) {
-    return missingPrerequisites.map(prerequisite => ({
-      conceptId: prerequisite._id,
-      name: prerequisite.name,
-      type: "prerequisite",
-      resources: this.getPrerequisiteResources(prerequisite, profile),
-      priority: "high",
-    }));
-  }
+  static determineOptimalIntensity(profile) {
+    const recentAssessments = profile.assessments
+      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+      .slice(0, 3);
 
-  /**
-   * Récupère les ressources pour un prérequis
-   */
-  static getPrerequisiteResources(prerequisite, profile) {
-    // Ici, vous pourriez avoir une base de données de ressources par concept
-    // Pour l'exemple, on retourne des ressources fictives
-    return [
-      {
-        title: `Introduction à ${prerequisite.name}`,
-        type: "tutorial",
-        duration: 60,
-        level: "basic",
-      },
-      {
-        title: `Exercices pratiques - ${prerequisite.name}`,
-        type: "practice",
-        duration: 90,
-        level: "basic",
-      },
-    ];
+    if (!recentAssessments.length) return "medium";
+
+    const averageScore =
+      recentAssessments.reduce((sum, a) => sum + a.score, 0) /
+      recentAssessments.length;
+
+    if (averageScore > 85) return "high";
+    if (averageScore < 60) return "low";
+    return "medium";
   }
 }
 

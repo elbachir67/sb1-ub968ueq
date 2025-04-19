@@ -34,6 +34,10 @@ const pathwaySchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+        locked: {
+          type: Boolean,
+          default: true,
+        },
         resources: [
           {
             resourceId: String,
@@ -75,6 +79,12 @@ const pathwaySchema = new mongoose.Schema(
         },
       },
     ],
+    nextGoals: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Goal",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -98,48 +108,48 @@ pathwaySchema.methods.updateProgress = async function () {
     );
   }
 
+  // Déverrouiller le prochain module si le module actuel est complété
+  if (this.moduleProgress[this.currentModule]?.completed) {
+    const nextModuleIndex = this.currentModule + 1;
+    if (nextModuleIndex < this.moduleProgress.length) {
+      this.moduleProgress[nextModuleIndex].locked = false;
+      this.currentModule = nextModuleIndex;
+    } else if (this.progress === 100) {
+      // Si tous les modules sont complétés, suggérer les prochains parcours
+      await this.suggestNextGoals();
+    }
+  }
+
   await this.save();
 };
 
-// Méthode pour générer des recommandations adaptatives
-pathwaySchema.methods.generateRecommendations = async function () {
-  const currentModule = this.moduleProgress[this.currentModule];
+// Méthode pour suggérer les prochains parcours
+pathwaySchema.methods.suggestNextGoals = async function () {
+  const currentGoal = await mongoose.model("Goal").findById(this.goalId);
+  if (!currentGoal) return;
 
-  // Réinitialiser les recommandations
-  this.adaptiveRecommendations = [];
+  // Trouver des parcours plus avancés dans le même domaine
+  const nextGoals = await mongoose
+    .model("Goal")
+    .find({
+      category: currentGoal.category,
+      level:
+        currentGoal.level === "beginner"
+          ? "intermediate"
+          : currentGoal.level === "intermediate"
+          ? "advanced"
+          : "advanced",
+      _id: { $ne: currentGoal._id },
+    })
+    .limit(3);
 
-  // Vérifier les ressources non complétées
-  const incompleteResources = currentModule.resources.filter(r => !r.completed);
-  if (incompleteResources.length > 0) {
-    this.adaptiveRecommendations.push({
-      type: "resource",
-      description: "Complétez les ressources du module en cours",
-      priority: "high",
-      status: "pending",
-    });
-  }
+  this.nextGoals = nextGoals.map(goal => goal._id);
+};
 
-  // Vérifier si un quiz est en attente
-  if (!currentModule.quiz.completed) {
-    this.adaptiveRecommendations.push({
-      type: "practice",
-      description: "Passez le quiz de validation du module",
-      priority: "high",
-      status: "pending",
-    });
-  }
-
-  // Recommandations de révision basées sur les performances
-  if (currentModule.quiz.score && currentModule.quiz.score < 70) {
-    this.adaptiveRecommendations.push({
-      type: "review",
-      description: "Révisez les concepts clés du module",
-      priority: "medium",
-      status: "pending",
-    });
-  }
-
-  await this.save();
+// Méthode pour vérifier si un module est accessible
+pathwaySchema.methods.isModuleAccessible = function (moduleIndex) {
+  if (moduleIndex === 0) return true;
+  return this.moduleProgress[moduleIndex - 1]?.completed || false;
 };
 
 export const Pathway = mongoose.model("Pathway", pathwaySchema);

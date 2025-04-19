@@ -7,88 +7,64 @@ import PathwayGenerationService from "../services/PathwayGenerationService.js";
 
 const router = express.Router();
 
-// Mettre à jour une recommandation
-router.put("/:pathwayId/recommendations/:index", auth, async (req, res) => {
+// Generate new pathway
+router.post("/generate", auth, async (req, res) => {
   try {
-    const { pathwayId, index } = req.params;
-    const { action } = req.body;
+    const { goalId } = req.body;
+    const userId = req.user.id;
 
-    if (!["start", "skip", "complete"].includes(action)) {
-      return res.status(400).json({ error: "Action invalide" });
+    // Check if goal exists
+    const goal = await Goal.findById(goalId);
+    if (!goal) {
+      return res.status(404).json({ error: "Objectif non trouvé" });
     }
 
-    const pathway = await Pathway.findOne({
-      _id: pathwayId,
-      userId: req.user.id,
+    // Check if pathway already exists for this user and goal
+    const existingPathway = await Pathway.findOne({
+      userId,
+      goalId,
+      status: { $ne: "completed" },
     });
 
-    if (!pathway) {
-      return res.status(404).json({ error: "Parcours non trouvé" });
-    }
-
-    const recommendationIndex = parseInt(index);
-    if (
-      recommendationIndex < 0 ||
-      recommendationIndex >= pathway.adaptiveRecommendations.length
-    ) {
+    if (existingPathway) {
       return res
         .status(400)
-        .json({ error: "Index de recommandation invalide" });
+        .json({ error: "Un parcours existe déjà pour cet objectif" });
     }
 
-    // Mettre à jour le statut de la recommandation
-    pathway.adaptiveRecommendations[recommendationIndex].status =
-      action === "start"
-        ? "pending"
-        : action === "skip"
-        ? "skipped"
-        : "completed";
+    // Generate pathway using the service
+    const pathway = await PathwayGenerationService.generatePathway(
+      userId,
+      goalId
+    );
 
-    // Si la recommandation est complétée, générer de nouvelles recommandations
-    if (action === "complete") {
-      const newRecommendations =
-        await PathwayGenerationService.generateAdaptiveRecommendations(
-          pathway.goalId,
-          pathway.moduleProgress,
-          pathway.adaptiveRecommendations.filter(
-            (_, i) => i !== recommendationIndex
-          )
-        );
+    // Populate the goal details
+    await pathway.populate("goalId");
 
-      pathway.adaptiveRecommendations = [
-        ...pathway.adaptiveRecommendations.filter(
-          (_, i) => i !== recommendationIndex
-        ),
-        ...newRecommendations,
-      ];
-    }
-
-    await pathway.save();
     res.json(pathway);
   } catch (error) {
-    logger.error("Error updating recommendation:", error);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la mise à jour de la recommandation" });
+    logger.error("Error generating pathway:", error);
+    res.status(500).json({ error: "Erreur lors de la génération du parcours" });
   }
 });
 
-// Récupérer les données du tableau de bord
+// Get user's pathways
 router.get("/user/dashboard", auth, async (req, res) => {
   try {
-    // Récupérer les parcours actifs de l'utilisateur
-    const activePathways = await Pathway.find({
-      userId: req.user.id,
-      status: { $in: ["active", "paused"] },
-    }).populate("goalId");
+    const userId = req.user.id;
 
-    // Récupérer les parcours complétés
-    const completedPathways = await Pathway.find({
-      userId: req.user.id,
-      status: "completed",
-    }).populate("goalId");
+    const [activePathways, completedPathways] = await Promise.all([
+      Pathway.find({
+        userId,
+        status: { $in: ["active", "paused"] },
+      }).populate("goalId"),
+      Pathway.find({
+        userId,
+        status: "completed",
+      }).populate("goalId"),
+    ]);
 
-    // Calculer les statistiques d'apprentissage
+    // Calculate learning stats
     const learningStats = {
       totalHoursSpent: 0,
       completedResources: 0,
@@ -96,34 +72,52 @@ router.get("/user/dashboard", auth, async (req, res) => {
       streakDays: 0,
     };
 
-    // Calculer les statistiques à partir des parcours
-    const allPathways = [...activePathways, ...completedPathways];
     let totalQuizzes = 0;
-    let totalScore = 0;
+    let quizScoreSum = 0;
 
-    allPathways.forEach(pathway => {
-      // Compter les ressources complétées
+    [...activePathways, ...completedPathways].forEach(pathway => {
+      // Calculate total time spent
+      const startDate = new Date(pathway.startedAt);
+      const lastDate = new Date(pathway.lastAccessedAt);
+      const hoursSpent = Math.round(
+        (lastDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+      );
+      learningStats.totalHoursSpent += hoursSpent;
+
+      // Count completed resources and calculate quiz scores
       pathway.moduleProgress.forEach(module => {
         learningStats.completedResources += module.resources.filter(
           r => r.completed
         ).length;
 
         if (module.quiz.completed && module.quiz.score) {
+          quizScoreSum += module.quiz.score;
           totalQuizzes++;
-          totalScore += module.quiz.score;
         }
       });
     });
 
-    // Calculer la moyenne des scores aux quiz
+    // Calculate average quiz score
     learningStats.averageQuizScore =
-      totalQuizzes > 0 ? Math.round(totalScore / totalQuizzes) : 0;
+      totalQuizzes > 0 ? Math.round(quizScoreSum / totalQuizzes) : 0;
 
-    // Calculer le streak (à implémenter selon la logique métier)
-    learningStats.streakDays = calculateStreak(allPathways);
+    // Calculate streak days
+    learningStats.streakDays = calculateStreakDays([
+      ...activePathways,
+      ...completedPathways,
+    ]);
 
-    // Calculer les prochaines étapes
-    const nextMilestones = calculateNextMilestones(activePathways);
+    // Get next milestones
+    const nextMilestones = activePathways.map(pathway => {
+      const currentModule = pathway.moduleProgress[pathway.currentModule];
+      const estimatedCompletion = new Date(pathway.estimatedCompletionDate);
+
+      return {
+        goalTitle: pathway.goalId.title,
+        moduleName: pathway.goalId.modules[pathway.currentModule].title,
+        dueDate: estimatedCompletion,
+      };
+    });
 
     res.json({
       learningStats,
@@ -132,85 +126,14 @@ router.get("/user/dashboard", auth, async (req, res) => {
       nextMilestones,
     });
   } catch (error) {
-    logger.error("Error fetching dashboard data:", error);
-    res.status(500).json({ error: "Error fetching dashboard data" });
+    logger.error("Error fetching dashboard:", error);
+    res
+      .status(500)
+      .json({ error: "Erreur lors du chargement du tableau de bord" });
   }
 });
 
-// Générer un nouveau parcours
-router.post("/generate", auth, async (req, res) => {
-  try {
-    const { goalId } = req.body;
-
-    if (!goalId) {
-      return res.status(400).json({ error: "goalId est requis" });
-    }
-
-    // Vérifier si un parcours existe déjà
-    const existingPathway = await Pathway.findOne({
-      userId: req.user.id,
-      goalId,
-      status: { $in: ["active", "paused"] },
-    });
-
-    if (existingPathway) {
-      return res.status(400).json({
-        error: "Un parcours pour cet objectif existe déjà",
-      });
-    }
-
-    // Récupérer l'objectif
-    const goal = await Goal.findById(goalId);
-    if (!goal) {
-      return res.status(404).json({ error: "Objectif non trouvé" });
-    }
-
-    // Générer le parcours personnalisé
-    const pathwayData = await PathwayGenerationService.generatePathway(
-      req.user.id,
-      goalId
-    );
-
-    // Créer le parcours
-    const pathway = new Pathway({
-      userId: req.user.id,
-      goalId,
-      status: "active",
-      progress: 0,
-      currentModule: 0,
-      moduleProgress: pathwayData.adaptedModules.map((module, index) => ({
-        moduleIndex: index,
-        completed: false,
-        resources: module.resources.map(resource => ({
-          resourceId:
-            resource._id?.toString() || resource.id?.toString() || resource,
-          completed: false,
-        })),
-        quiz: { completed: false },
-      })),
-      startedAt: new Date(),
-      lastAccessedAt: new Date(),
-      estimatedCompletionDate: new Date(
-        Date.now() + goal.estimatedDuration * 7 * 24 * 60 * 60 * 1000
-      ),
-      adaptiveRecommendations: pathwayData.recommendations,
-    });
-
-    await pathway.save();
-
-    // Récupérer le parcours avec les relations
-    const populatedPathway = await Pathway.findById(pathway._id).populate(
-      "goalId"
-    );
-
-    res.status(201).json(populatedPathway);
-  } catch (error) {
-    logger.error("Error generating pathway:", error);
-    res.status(500).json({ error: "Error generating pathway" });
-  }
-});
-
-// Obtenir un parcours spécifique
+// Get specific pathway
 router.get("/:pathwayId", auth, async (req, res) => {
   try {
     const pathway = await Pathway.findOne({
@@ -225,11 +148,11 @@ router.get("/:pathwayId", auth, async (req, res) => {
     res.json(pathway);
   } catch (error) {
     logger.error("Error fetching pathway:", error);
-    res.status(500).json({ error: "Error fetching pathway" });
+    res.status(500).json({ error: "Erreur lors du chargement du parcours" });
   }
 });
 
-// Mettre à jour la progression d'un module
+// Update module progress
 router.put("/:pathwayId/modules/:moduleIndex", auth, async (req, res) => {
   try {
     const { pathwayId, moduleIndex } = req.params;
@@ -238,91 +161,89 @@ router.put("/:pathwayId/modules/:moduleIndex", auth, async (req, res) => {
     const pathway = await Pathway.findOne({
       _id: pathwayId,
       userId: req.user.id,
-    });
+    }).populate("goalId");
 
     if (!pathway) {
       return res.status(404).json({ error: "Parcours non trouvé" });
     }
 
-    // Mettre à jour la ressource
-    if (resourceId) {
-      const module = pathway.moduleProgress[moduleIndex];
-      if (!module) {
-        return res.status(404).json({ error: "Module non trouvé" });
-      }
-
-      const resourceIndex = module.resources.findIndex(
-        r => r.resourceId === resourceId
-      );
-      if (resourceIndex > -1) {
-        module.resources[resourceIndex].completed = completed;
-        module.resources[resourceIndex].completedAt = new Date();
-      }
-
-      // Vérifier si le module est complété
-      module.completed =
-        module.resources.every(r => r.completed) && module.quiz.completed;
+    // Vérifier si le module est accessible
+    if (!pathway.isModuleAccessible(parseInt(moduleIndex))) {
+      return res.status(403).json({ error: "Module non accessible" });
     }
 
-    // Mettre à jour la progression globale
-    pathway.progress = Math.round(
-      (pathway.moduleProgress.filter(m => m.completed).length /
-        pathway.moduleProgress.length) *
-        100
-    );
+    // Update resource completion
+    if (resourceId) {
+      const moduleProgress = pathway.moduleProgress[moduleIndex];
+      const resourceIndex = moduleProgress.resources.findIndex(
+        r => r.resourceId === resourceId
+      );
 
-    await pathway.save();
+      if (resourceIndex === -1) {
+        return res.status(404).json({ error: "Ressource non trouvée" });
+      }
+
+      moduleProgress.resources[resourceIndex].completed = completed;
+      moduleProgress.resources[resourceIndex].completedAt = completed
+        ? new Date()
+        : null;
+
+      // Check if all resources are completed
+      const allResourcesCompleted = moduleProgress.resources.every(
+        r => r.completed
+      );
+
+      // If all resources are completed and quiz is passed, mark module as completed
+      if (
+        allResourcesCompleted &&
+        moduleProgress.quiz.completed &&
+        moduleProgress.quiz.score >= 70
+      ) {
+        moduleProgress.completed = true;
+      }
+    }
+
+    // Update progress and unlock next module if needed
+    await pathway.updateProgress();
+
+    // Populate goal details before sending response
+    await pathway.populate("goalId");
+
     res.json(pathway);
   } catch (error) {
     logger.error("Error updating module progress:", error);
-    res.status(500).json({ error: "Error updating progress" });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour de la progression" });
   }
 });
 
-// Fonctions utilitaires
-function calculateStreak(pathways) {
-  // Implémentation simple du calcul de streak
-  // À améliorer selon les besoins spécifiques
-  let streak = 0;
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+// Helper function to calculate streak days
+function calculateStreakDays(pathways) {
+  const activityDates = new Set();
 
-  // Vérifier si l'utilisateur a été actif aujourd'hui ou hier
-  const recentActivity = pathways.some(pathway => {
-    const lastAccess = new Date(pathway.lastAccessedAt);
-    return (
-      lastAccess.toDateString() === today.toDateString() ||
-      lastAccess.toDateString() === yesterday.toDateString()
-    );
-  });
-
-  if (recentActivity) {
-    streak = 1;
-    // Parcourir les jours précédents pour calculer le streak
-    let currentDate = new Date(yesterday);
-    pathways.forEach(pathway => {
-      if (new Date(pathway.lastAccessedAt) >= currentDate) {
-        streak++;
+  pathways.forEach(pathway => {
+    pathway.moduleProgress.forEach(module => {
+      module.resources.forEach(resource => {
+        if (resource.completedAt) {
+          activityDates.add(resource.completedAt.toISOString().split("T")[0]);
+        }
+      });
+      if (module.quiz.completedAt) {
+        activityDates.add(module.quiz.completedAt.toISOString().split("T")[0]);
       }
     });
+  });
+
+  let streak = 0;
+  let currentDate = new Date();
+
+  while (activityDates.has(currentDate.toISOString().split("T")[0])) {
+    streak++;
+    currentDate.setDate(currentDate.getDate() - 1);
   }
 
   return streak;
-}
-
-function calculateNextMilestones(activePathways) {
-  return activePathways.map(pathway => {
-    const currentModule = pathway.moduleProgress[pathway.currentModule];
-    const dueDate = new Date(pathway.startedAt);
-    dueDate.setDate(dueDate.getDate() + 7); // Exemple: échéance d'une semaine
-
-    return {
-      goalTitle: pathway.goalId.title,
-      moduleName: `Module ${pathway.currentModule + 1}`,
-      dueDate,
-    };
-  });
 }
 
 export const pathwayRoutes = router;
