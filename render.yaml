@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ucad-ia-roadmap-api
+    env: node
+    repo: https://github.com/votre-username/ucad-ia-roadmap.git # Remplacez par votre URL de repo
+    branch: main
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/sections
+    autoDeploy: true
+    plan: free

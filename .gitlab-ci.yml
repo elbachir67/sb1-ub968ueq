@@ -1,0 +1,85 @@
+image: node:latest
+
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+variables:
+  # Backend variables
+  MONGODB_URI: $MONGODB_URI
+  JWT_SECRET: $JWT_SECRET
+  PORT: $PORT
+  # Frontend variables
+  VITE_API_URL: $VITE_API_URL
+  # Deployment variables
+  NETLIFY_SITE_ID: $NETLIFY_SITE_ID
+  NETLIFY_AUTH_TOKEN: $NETLIFY_AUTH_TOKEN
+
+# Cache dependencies for faster builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - server/node_modules/
+
+# Install dependencies for both frontend and backend
+install:
+  stage: install
+  script:
+    # Install frontend dependencies
+    - npm ci
+    # Install backend dependencies
+    - cd server && npm ci
+  artifacts:
+    paths:
+      - node_modules/
+      - server/node_modules/
+
+# Run ESLint
+lint:
+  stage: test
+  script:
+    - npm run lint
+  dependencies:
+    - install
+
+# Run frontend tests
+test:
+  stage: test
+  script:
+    - npm run test
+  dependencies:
+    - install
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+# Build frontend
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+  dependencies:
+    - install
+
+# Deploy frontend to Netlify
+deploy:
+  stage: deploy
+  script:
+    - npm install -g netlify-cli
+    - netlify deploy --site $NETLIFY_SITE_ID --auth $NETLIFY_AUTH_TOKEN --prod --dir=dist
+  dependencies:
+    - build
+  only:
+    - main
+  environment:
+    name: production
+    url: https://$NETLIFY_SITE_ID.netlify.app
