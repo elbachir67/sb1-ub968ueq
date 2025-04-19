@@ -15,7 +15,7 @@ const MONGODB_URI =
 
 const users = [
   {
-    email: "student@ucad.edu.sn",
+    email: "student1@ucad.edu.sn",
     password: "Student123!",
     role: "user",
     isActive: true,
@@ -24,6 +24,12 @@ const users = [
     email: "admin@ucad.edu.sn",
     password: "Admin123!",
     role: "admin",
+    isActive: true,
+  },
+  {
+    email: "daffy.duck@ucad.edu.sn",
+    password: "Daffy123!",
+    role: "user",
     isActive: true,
   },
 ];
@@ -51,6 +57,130 @@ const concepts = [
     prerequisites: [],
   },
 ];
+
+const quizTemplates = {
+  ml_intro: {
+    title: "Quiz Introduction au ML",
+    description: "Validez vos connaissances sur les fondamentaux du ML",
+    timeLimit: 1800,
+    passingScore: 70,
+    questions: [
+      {
+        text: "Quelle métrique est appropriée pour un problème de classification binaire déséquilibré ?",
+        category: "ml",
+        difficulty: "intermediate",
+        options: [
+          {
+            text: "F1-Score",
+            isCorrect: true,
+          },
+          {
+            text: "Accuracy",
+            isCorrect: false,
+          },
+          {
+            text: "Mean Squared Error",
+            isCorrect: false,
+          },
+        ],
+        explanation:
+          "Le F1-Score est plus approprié car il prend en compte à la fois la précision et le rappel.",
+      },
+      {
+        text: "Quel algorithme est un exemple d'apprentissage non supervisé ?",
+        category: "ml",
+        difficulty: "basic",
+        options: [
+          {
+            text: "K-means clustering",
+            isCorrect: true,
+          },
+          {
+            text: "Random Forest",
+            isCorrect: false,
+          },
+          {
+            text: "Régression logistique",
+            isCorrect: false,
+          },
+        ],
+        explanation:
+          "K-means est un algorithme de clustering qui ne nécessite pas de données étiquetées.",
+      },
+      {
+        text: "Quelle est la principale différence entre la validation croisée et le hold-out set ?",
+        category: "ml",
+        difficulty: "intermediate",
+        options: [
+          {
+            text: "La validation croisée utilise plusieurs partitions des données",
+            isCorrect: true,
+          },
+          {
+            text: "La validation croisée est plus rapide",
+            isCorrect: false,
+          },
+          {
+            text: "Le hold-out set donne toujours de meilleurs résultats",
+            isCorrect: false,
+          },
+        ],
+        explanation:
+          "La validation croisée divise les données en k partitions pour une évaluation plus robuste.",
+      },
+    ],
+  },
+  python_basics: {
+    title: "Quiz Python pour l'IA",
+    description: "Testez vos connaissances en Python",
+    timeLimit: 1500,
+    passingScore: 70,
+    questions: [
+      {
+        text: "Quelle bibliothèque est principalement utilisée pour l'analyse de données en Python ?",
+        category: "programming",
+        difficulty: "basic",
+        options: [
+          {
+            text: "Pandas",
+            isCorrect: true,
+          },
+          {
+            text: "Requests",
+            isCorrect: false,
+          },
+          {
+            text: "Flask",
+            isCorrect: false,
+          },
+        ],
+        explanation:
+          "Pandas est la bibliothèque standard pour la manipulation et l'analyse de données en Python.",
+      },
+      {
+        text: "Quelle est la différence entre une liste et un tuple en Python ?",
+        category: "programming",
+        difficulty: "basic",
+        options: [
+          {
+            text: "Les tuples sont immuables, les listes sont mutables",
+            isCorrect: true,
+          },
+          {
+            text: "Les tuples sont plus rapides à parcourir",
+            isCorrect: false,
+          },
+          {
+            text: "Les listes peuvent contenir plus d'éléments",
+            isCorrect: false,
+          },
+        ],
+        explanation:
+          "La principale différence est que les tuples sont immuables (non modifiables) une fois créés.",
+      },
+    ],
+  },
+};
 
 const goals = [
   {
@@ -104,6 +234,27 @@ const goals = [
           "Implémenter un modèle simple",
         ],
       },
+      {
+        title: "Python pour le ML",
+        description: "Maîtrisez Python pour l'analyse de données et le ML",
+        duration: 15,
+        skills: [
+          { name: "Python", level: "intermediate" },
+          { name: "Pandas", level: "basic" },
+        ],
+        resources: [
+          {
+            title: "Python Data Science Handbook",
+            type: "book",
+            url: "https://jakevdp.github.io/PythonDataScienceHandbook/",
+            duration: 150,
+          },
+        ],
+        validationCriteria: [
+          "Maîtriser Pandas et NumPy",
+          "Analyser des datasets",
+        ],
+      },
     ],
     careerOpportunities: [
       {
@@ -119,55 +270,6 @@ const goals = [
       provider: "UCAD AI Center",
       url: "https://ucad.sn/certifications/ml-pro",
     },
-  },
-];
-
-const quizzes = [
-  {
-    title: "Quiz Introduction au ML",
-    description: "Validez vos connaissances sur les fondamentaux du ML",
-    timeLimit: 1800,
-    passingScore: 70,
-    questions: [
-      {
-        text: "Quelle métrique est appropriée pour un problème de classification binaire déséquilibré ?",
-        options: [
-          {
-            text: "F1-Score",
-            isCorrect: true,
-          },
-          {
-            text: "Accuracy",
-            isCorrect: false,
-          },
-          {
-            text: "Mean Squared Error",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "Le F1-Score est plus approprié car il prend en compte à la fois la précision et le rappel.",
-      },
-      {
-        text: "Quel algorithme est un exemple d'apprentissage non supervisé ?",
-        options: [
-          {
-            text: "K-means clustering",
-            isCorrect: true,
-          },
-          {
-            text: "Random Forest",
-            isCorrect: false,
-          },
-          {
-            text: "Régression logistique",
-            isCorrect: false,
-          },
-        ],
-        explanation:
-          "K-means est un algorithme de clustering qui ne nécessite pas de données étiquetées.",
-      },
-    ],
   },
 ];
 
@@ -224,10 +326,13 @@ async function populateDatabase() {
     const quizzesWithModuleIds = [];
 
     for (const goal of createdGoals) {
-      for (const module of goal.modules) {
-        // Pour chaque module, créer un quiz correspondant
+      for (const [index, module] of goal.modules.entries()) {
+        // Choisir le template approprié selon le module
+        const template =
+          index === 0 ? quizTemplates.ml_intro : quizTemplates.python_basics;
+
         const quiz = {
-          ...quizzes[0], // Utiliser le quiz template
+          ...template,
           moduleId: module._id.toString(),
           title: `Quiz - ${module.title}`,
           description: `Évaluation des connaissances - ${module.title}`,
