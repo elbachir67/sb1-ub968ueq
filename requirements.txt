@@ -1,0 +1,84 @@
+Exigences Fonctionnelles
+
+A. Gestion des Objectifs d'Apprentissage (P0)
+
+    Le système doit permettre la création, modification et suppression d'objectifs
+    Chaque objectif doit avoir des prérequis et des modules structurés
+    Les objectifs doivent être filtrables par catégorie et niveau
+    Le système doit permettre une recherche textuelle des objectifs
+
+B. Système d'Évaluation (P0/P2)
+
+    Évaluation initiale via chatbot interactif
+    Tests de niveau par domaine (math, programmation, etc.)
+    Évaluations continues pendant le parcours
+    Quiz de validation pour chaque module
+    Adaptation dynamique de la difficulté
+
+C. Génération de Parcours (P1)
+
+    Création automatique de parcours personnalisés
+    Prise en compte des prérequis et du niveau de l'apprenant
+    Adaptation du contenu selon le profil
+    Recommandations de ressources adaptées
+
+D. Suivi de Progression (P1)
+
+    Dashboard personnalisé pour chaque apprenant
+    Visualisation graphique de la progression
+    Indicateurs de performance (temps, scores, etc.)
+    Système de validation des modules
+
+    Exigences Non-Fonctionnelles
+
+A. Performance
+
+    Temps de réponse < 2s pour les opérations courantes
+    Support de 1000 utilisateurs simultanés
+    Disponibilité 99.9%
+
+B. Sécurité
+
+    Authentification robuste
+    Protection des données personnelles
+    Chiffrement des communications
+
+C. Utilisabilité
+
+    Interface responsive
+    Navigation intuitive
+    Support multilingue (FR/EN)
+    Accessibilité WCAG 2.1
+
+    Exigences Techniques
+
+A. Architecture
+
+    Backend Node.js/Express
+    Frontend React
+    Base de données MongoDB
+    API RESTful
+
+B. Intégration
+
+    Export de données (CSV/Excel)
+    API documentée pour intégrations futures
+    Support SSO (optionnel)
+
+    Exigences Métier
+
+A. Pédagogie
+
+    Contenu validé par experts
+    Progression logique des concepts
+    Feedback constructif
+    Méthodes d'apprentissage variées
+
+B. Analytics
+
+    Suivi des performances
+    Analyse des parcours
+    Identification des points bloquants
+    Rapports d'activité
+
+Cette structure couvre les principaux aspects du système tout en respectant les priorités définies dans le backlog.
