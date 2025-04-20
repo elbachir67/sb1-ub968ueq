@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { API_URL } from "./constants";
 
 export const api = {
   // Base URL
@@ -22,6 +22,7 @@ export const api = {
   pathways: `${API_URL}/api/pathways`,
   users: `${API_URL}/api/users`,
   analytics: `${API_URL}/api/analytics`,
+  content: `${API_URL}/api/content`,
 
   // Helper pour obtenir les ressources d'une étape
   stepResources: (stepId: string) => `${API_URL}/api/resources/step/${stepId}`,
@@ -41,4 +42,8 @@ export const api = {
   userGoals: `${API_URL}/api/profiles/goals`,
   userCertificates: `${API_URL}/api/profiles/certificates`,
   userSkills: `${API_URL}/api/profiles/skills`,
+
+  // Helper pour la génération de contenu
+  generateContent: `${API_URL}/api/content/generate`,
+  getGeneratedContent: `${API_URL}/api/content`,
 };

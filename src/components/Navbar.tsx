@@ -13,6 +13,9 @@ import {
   Code,
   Database,
   Bot,
+  Settings,
+  Library,
+  ChevronDown,
 } from "lucide-react";
 
 function Navbar() {
@@ -20,6 +23,7 @@ function Navbar() {
   const navigate = useNavigate();
   const { isAdmin, signOut, user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === path ? "active" : "";
@@ -78,13 +82,51 @@ function Navbar() {
             )}
 
             {isAdmin && (
-              <Link
-                to="/add-goal"
-                className="flex items-center px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvel Objectif
-              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                  className="flex items-center px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Administration
+                  <ChevronDown
+                    className={`w-4 h-4 ml-2 transition-transform ${
+                      adminMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {adminMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-900 ring-1 ring-black ring-opacity-5">
+                    <div className="py-1" role="menu">
+                      <Link
+                        to="/admin/dashboard"
+                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Tableau de bord
+                      </Link>
+                      <Link
+                        to="/admin/resources"
+                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <Library className="w-4 h-4 mr-2" />
+                        Gestion des ressources
+                      </Link>
+                      <Link
+                        to="/admin/system"
+                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configuration système
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {isAuthenticated ? (
@@ -168,7 +210,38 @@ function Navbar() {
               </Link>
             )}
 
-            {isAuthenticated ? (
+            {isAdmin && (
+              <div className="pt-4 pb-3 border-t border-gray-700">
+                <div className="px-2 space-y-1">
+                  <Link
+                    to="/admin/dashboard"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-4 h-4 inline mr-2" />
+                    Tableau de bord admin
+                  </Link>
+                  <Link
+                    to="/admin/resources"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Library className="w-4 h-4 inline mr-2" />
+                    Gestion des ressources
+                  </Link>
+                  <Link
+                    to="/admin/system"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="w-4 h-4 inline mr-2" />
+                    Configuration système
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {isAuthenticated && (
               <div className="pt-4 pb-3 border-t border-gray-700">
                 <div className="flex items-center px-3">
                   <div className="flex-shrink-0">
@@ -182,7 +255,7 @@ function Navbar() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 px-2 space-y-1">
+                <div className="mt-3 px-2">
                   <button
                     onClick={() => {
                       handleSignOut();
@@ -195,14 +268,6 @@ function Navbar() {
                   </button>
                 </div>
               </div>
-            ) : (
-              <Link
-                to="/login"
-                className="block mt-4 px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 text-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Connexion
-              </Link>
             )}
           </div>
         </div>

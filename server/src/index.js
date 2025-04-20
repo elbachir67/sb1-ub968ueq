@@ -17,6 +17,7 @@ import { userRoutes } from "./routes/users.js";
 import learnerProfileRoutes from "./routes/learnerProfiles.js";
 import { pathwayRoutes } from "./routes/pathways.js";
 import { quizRoutes } from "./routes/quiz.js";
+import { contentRoutes } from "./routes/content.js";
 
 // Get the directory name of the current module
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +27,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 // Verify critical environment variables
-const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET", "PORT"];
+const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET", "PORT", "OPENAI_API_KEY"];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
@@ -64,7 +65,8 @@ app.use("/api/assessments", assessmentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profiles", learnerProfileRoutes);
 app.use("/api/pathways", pathwayRoutes);
-app.use("/api", quizRoutes); // Ajout des routes de quiz
+app.use("/api", quizRoutes);
+app.use("/api/content", contentRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -80,6 +82,7 @@ const startServer = async () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
       logger.info("JWT_SECRET is set:", !!process.env.JWT_SECRET);
+      logger.info("OpenAI API Key is set:", !!process.env.OPENAI_API_KEY);
     });
   } catch (error) {
     logger.error("Server startup error:", error);

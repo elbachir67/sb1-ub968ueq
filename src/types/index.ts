@@ -1,76 +1,11 @@
-// Types for the resources
-export type ResourceType = "article" | "video" | "course" | "book" | "use_case";
-
-// Types for the niveaux de difficulté
-export type GoalDifficulty = "beginner" | "intermediate" | "advanced";
-
-// Types for the catégories de buts
-export type GoalCategory =
-  | "ml"
-  | "dl"
-  | "data_science"
-  | "mlops"
-  | "computer_vision"
-  | "nlp"
-  | "robotics"
-  | "quantum_ml";
-
-// Interface for les messages du chat
-export interface Message {
+export interface User {
   id: string;
-  type: "user" | "bot";
-  content: string;
-  options?: string[];
-  component?: React.ReactNode;
+  email: string;
+  role: "user" | "admin";
+  isActive: boolean;
+  lastLogin?: Date;
 }
 
-// Interface for les compétences
-export interface Skill {
-  name: string;
-  level: string;
-}
-
-// Interface for les ressources
-export interface Resource {
-  title: string;
-  type: ResourceType;
-  url: string;
-  duration: number;
-}
-
-// Interface for les opportunités de carrière
-export interface CareerOpportunity {
-  title: string;
-  description: string;
-  averageSalary: string;
-  companies: string[];
-}
-
-// Interface for la certification
-export interface Certification {
-  available: boolean;
-  name: string;
-  provider: string;
-  url: string;
-}
-
-// Interface for les modules
-export interface Module {
-  title: string;
-  description: string;
-  duration: number;
-  skills: Skill[];
-  resources: Resource[];
-  validationCriteria: string[];
-}
-
-// Interface for les prérequis
-export interface Prerequisite {
-  category: string;
-  skills: Skill[];
-}
-
-// Interface for les buts
 export interface Goal {
   _id: string;
   title: string;
@@ -82,99 +17,131 @@ export interface Goal {
   modules: Module[];
   careerOpportunities: CareerOpportunity[];
   certification?: Certification;
+  requiredConcepts?: string[];
+  recommendedFor?: Recommendation[];
   isRecommended?: boolean;
+  matchScore?: number;
 }
 
-// Types for les quiz
+export type GoalCategory =
+  | "ml"
+  | "dl"
+  | "data_science"
+  | "mlops"
+  | "computer_vision"
+  | "nlp"
+  | "robotics"
+  | "quantum_ml";
+
+export type GoalDifficulty = "beginner" | "intermediate" | "advanced";
+
+export interface Prerequisite {
+  category: string;
+  skills: Skill[];
+}
+
+export interface Skill {
+  name: string;
+  level: GoalDifficulty;
+}
+
+export interface Module {
+  _id: string;
+  title: string;
+  description: string;
+  duration: number;
+  skills: Skill[];
+  resources: Resource[];
+  validationCriteria: string[];
+}
+
+export interface Resource {
+  title: string;
+  type: ResourceType;
+  url: string;
+  duration: number;
+}
+
+export type ResourceType = "article" | "video" | "course" | "book" | "use_case";
+
+export interface CareerOpportunity {
+  title: string;
+  description: string;
+  averageSalary: string;
+  companies: string[];
+}
+
+export interface Certification {
+  available: boolean;
+  name?: string;
+  provider?: string;
+  url?: string;
+}
+
+export interface Recommendation {
+  type: "resource" | "practice" | "review";
+  description: string;
+  priority: "high" | "medium" | "low";
+  status: "pending" | "completed" | "skipped";
+}
+
 export interface Question {
   id: string;
   text: string;
   category: string;
-  difficulty: "basic" | "intermediate" | "advanced";
-  options: {
-    id: string;
-    text: string;
-    isCorrect: boolean;
-  }[];
+  difficulty: GoalDifficulty;
+  options: Option[];
   explanation: string;
 }
 
-export interface QuizQuestion {
+export interface Option {
   id: string;
   text: string;
-  category: string;
-  difficulty: "basic" | "intermediate" | "advanced";
-  options: {
-    id: string;
-    text: string;
-    isCorrect: boolean;
-  }[];
-  explanation: string;
+  isCorrect: boolean;
 }
 
-export interface QuizResult {
-  score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  timeSpent: number;
-  answers: {
-    questionId: string;
-    selectedOption: string;
-    isCorrect: boolean;
-    timeSpent: number;
-  }[];
-}
-
-export interface ModuleQuiz {
+export interface Message {
   id: string;
-  title: string;
-  description: string;
-  timeLimit: number;
-  questions: QuizQuestion[];
-  passingScore: number;
+  type: "user" | "bot";
+  content: string;
+  options?: string[];
+  component?: React.ReactNode;
 }
 
-// Interface for le progrès des modules
-export interface PathwayResource {
-  resourceId: string;
-  completed: boolean;
-  completedAt?: Date;
-  type?: ResourceType;
-}
-
-export interface ModuleProgress {
-  moduleIndex: number;
-  completed: boolean;
-  resources: PathwayResource[];
-  quiz: {
-    completed: boolean;
-    score?: number;
-    completedAt?: Date;
+export interface UserProfile {
+  userId: string;
+  learningStyle: "visual" | "auditory" | "reading" | "kinesthetic";
+  preferences: {
+    mathLevel: GoalDifficulty;
+    programmingLevel: GoalDifficulty;
+    preferredDomain: GoalCategory;
   };
+  assessments: Assessment[];
+  goal?: string;
 }
 
-// Interface for le tableau de bord de l'apprenant
-export interface LearningStats {
-  totalHoursSpent: number;
-  completedResources: number;
-  averageQuizScore: number;
-  streakDays: number;
+export interface Assessment {
+  category: string;
+  score: number;
+  responses: AssessmentResponse[];
+  recommendations: AssessmentRecommendation[];
+  completedAt: Date;
 }
 
-export interface Milestone {
-  goalTitle: string;
-  moduleName: string;
-  dueDate: Date;
+export interface AssessmentResponse {
+  questionId: string;
+  selectedOption: string;
+  timeSpent: number;
+  category: string;
+  difficulty: string;
 }
 
-export interface LearnerDashboard {
-  learningStats: LearningStats;
-  activePathways: Pathway[];
-  completedPathways: Pathway[];
-  nextMilestones: Milestone[];
+export interface AssessmentRecommendation {
+  category: string;
+  score: number;
+  recommendations: string[];
 }
 
-// Interface for le parcours d'apprentissage
 export interface Pathway {
   _id: string;
   userId: string;
@@ -186,54 +153,83 @@ export interface Pathway {
   startedAt: Date;
   lastAccessedAt: Date;
   estimatedCompletionDate: Date;
-  adaptiveRecommendations: {
-    type: "resource" | "practice" | "review";
-    description: string;
-    priority: "high" | "medium" | "low";
-    status: "pending" | "completed" | "skipped";
-  }[];
+  adaptiveRecommendations: Recommendation[];
+  nextGoals?: string[];
 }
 
-// Interface for le profil utilisateur
-export interface UserProfile {
-  mathLevel: string;
-  programmingLevel: string;
-  domain: string;
+export interface ModuleProgress {
+  _id: string;
+  moduleIndex: number;
+  completed: boolean;
+  locked: boolean;
+  resources: PathwayResource[];
+  quiz: QuizProgress;
 }
 
-// Interface for les résultats d'évaluation
-export interface AssessmentResult {
-  category: string;
-  level: string;
-  score: number;
-  recommendations: string[];
+export interface PathwayResource {
+  resourceId: string;
+  completed: boolean;
+  completedAt?: Date;
+  type?: ResourceType;
 }
 
-// Nouvelles interfaces pour P2 - Évaluation continue et Analytics
+export interface QuizProgress {
+  completed: boolean;
+  score?: number;
+  completedAt?: Date;
+}
 
-export interface ConceptAssessment {
+export interface LearnerDashboard {
+  learningStats: {
+    totalHoursSpent: number;
+    completedResources: number;
+    averageQuizScore: number;
+    streakDays: number;
+  };
+  activePathways: Pathway[];
+  completedPathways: Pathway[];
+  nextMilestones: Milestone[];
+}
+
+export interface Milestone {
+  goalTitle: string;
+  moduleName: string;
+  dueDate: Date;
+}
+
+export interface ModuleQuiz {
   id: string;
-  conceptId: string;
+  title: string;
+  description: string;
+  timeLimit: number;
   questions: Question[];
   passingScore: number;
-  timeLimit: number;
-  difficulty: "basic" | "intermediate" | "advanced";
 }
 
-export interface ConceptAssessmentResult {
+export interface QuizResult {
   score: number;
-  responses: {
-    questionId: string;
-    selectedOption: string;
-    isCorrect: boolean;
-    timeSpent: number;
-  }[];
-  recommendations: string[];
-  adaptations: {
-    title: string;
-    description: string;
-    type: string;
-  }[];
+  totalQuestions: number;
+  correctAnswers: number;
+  timeSpent: number;
+  answers: QuizAnswer[];
+  categoryScores?: CategoryScore[];
+  recommendations?: string[];
+}
+
+export interface QuizAnswer {
+  questionId: string;
+  selectedOption: string;
+  isCorrect: boolean;
+  timeSpent: number;
+}
+
+export interface CategoryScore {
+  category: string;
+  score: number;
+  confidence: number;
+  timeEfficiency: number;
+  weakPoints: string[];
+  strongPoints: string[];
 }
 
 export interface AnalyticsData {
@@ -241,24 +237,19 @@ export interface AnalyticsData {
   completionRate: number;
   averageScore: number;
   activeDays: number;
-  progressData: {
-    date: string;
-    progress: number;
-    quizScore?: number;
-    timeSpent?: number;
-  }[];
-  conceptMastery: {
-    conceptId: string;
-    conceptName: string;
-    masteryLevel: number;
-    confidence: number;
-  }[];
-  timeDistribution: {
-    category: string;
-    hours: number;
-  }[];
-  recommendations: {
-    title: string;
-    description: string;
-  }[];
+  progressData: ProgressDataPoint[];
+  categoryPerformance: CategoryPerformance[];
+}
+
+export interface ProgressDataPoint {
+  date: string;
+  progress: number;
+  quizScore?: number;
+  timeSpent?: number;
+}
+
+export interface CategoryPerformance {
+  category: string;
+  score: number;
+  improvement: number;
 }

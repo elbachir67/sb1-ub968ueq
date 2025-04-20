@@ -9,6 +9,9 @@ import AssessmentPage from "./pages/AssessmentPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminResourceManagementPage from "./pages/AdminResourceManagementPage";
+import AdminSystemConfigPage from "./pages/AdminSystemConfigPage";
 import DashboardPage from "./pages/DashboardPage";
 import PathwayPage from "./pages/PathwayPage";
 import QuizPage from "./pages/QuizPage";
@@ -29,7 +32,6 @@ function PrivateRoute({
   const { isAuthenticated, isAdmin, hasCompletedAssessment } = useAuth();
 
   if (!isAuthenticated) {
-    // Store the current path to redirect back after login
     localStorage.setItem("redirectAfterLogin", window.location.pathname);
     return <Navigate to="/login" />;
   }
@@ -60,6 +62,32 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
+
+        {/* Routes Admin */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <PrivateRoute adminOnly={true}>
+              <AdminDashboardPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/resources"
+          element={
+            <PrivateRoute adminOnly={true}>
+              <AdminResourceManagementPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/system"
+          element={
+            <PrivateRoute adminOnly={true}>
+              <AdminSystemConfigPage />
+            </PrivateRoute>
+          }
+        />
 
         <Route
           path="/goals"
@@ -115,7 +143,6 @@ function App() {
           }
         />
 
-        {/* New routes for P2 features */}
         <Route
           path="/concepts/:conceptId/assessment"
           element={

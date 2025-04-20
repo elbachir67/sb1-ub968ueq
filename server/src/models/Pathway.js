@@ -29,6 +29,10 @@ const pathwaySchema = new mongoose.Schema(
     },
     moduleProgress: [
       {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          auto: true,
+        },
         moduleIndex: Number,
         completed: {
           type: Boolean,

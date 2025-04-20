@@ -26,6 +26,7 @@ import { toast } from "react-hot-toast";
 import { Pathway, ResourceType, PathwayResource } from "../types";
 import AdaptiveRecommendations from "../components/AdaptiveRecommendations";
 import LearningProgressChart from "../components/LearningProgressChart";
+import AdaptiveContent from "../components/AdaptiveContent";
 
 interface ResourceTypeConfig {
   icon: typeof BookOpen;
@@ -439,6 +440,25 @@ function PathwayPage() {
                     );
                   }
                 )}
+              </div>
+
+              {/* Contenu Personnalisé */}
+              <div className="mt-8">
+                <h3 className="text-md font-medium text-gray-300 mb-4">
+                  Contenu Personnalisé
+                </h3>
+                <AdaptiveContent
+                  topic={pathway.goalId.modules[index].title}
+                  moduleId={module._id}
+                  userProfile={{
+                    learningStyle: "visual",
+                    preferences: {
+                      mathLevel: "intermediate",
+                      programmingLevel: "intermediate",
+                    },
+                  }}
+                  previousPerformance={module.quiz.score || 0}
+                />
               </div>
 
               {/* Quiz */}
