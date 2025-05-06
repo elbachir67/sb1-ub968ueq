@@ -4,9 +4,16 @@ import { logger } from "../utils/logger.js";
 
 class ContentGenerationService {
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Initialize OpenAI only if API key is available
+    if (process.env.OPENAI_API_KEY) {
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    } else {
+      logger.warn(
+        "OpenAI API key not found, using fallback content generation"
+      );
+    }
   }
 
   async generateContent(params) {
@@ -21,23 +28,27 @@ class ContentGenerationService {
 
       let generatedContent;
 
-      try {
-        // Essayer d'abord avec OpenAI
-        const completion = await this.openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: this.buildPrompt(params) }],
-          temperature: 0.7,
-        });
-        generatedContent = completion.choices[0].message.content;
-      } catch (openaiError) {
-        logger.warn(
-          "OpenAI API error, using fallback content generation:",
-          openaiError
-        );
+      // Try OpenAI if available, otherwise use fallback
+      if (this.openai) {
+        try {
+          const completion = await this.openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: this.buildPrompt(params) }],
+            temperature: 0.7,
+          });
+          generatedContent = completion.choices[0].message.content;
+        } catch (openaiError) {
+          logger.warn(
+            "OpenAI API error, using fallback content generation:",
+            openaiError
+          );
+          generatedContent = this.generateFallbackContent(params);
+        }
+      } else {
         generatedContent = this.generateFallbackContent(params);
       }
 
-      // Sauvegarder dans MongoDB
+      // Save to MongoDB
       const content = new GeneratedContent({
         topic,
         content: generatedContent,
@@ -75,7 +86,7 @@ class ContentGenerationService {
   generateFallbackContent(params) {
     const { topic, userLevel, contentType, previousPerformance } = params;
 
-    // Générer du contenu basique basé sur les paramètres
+    // Generate basic content based on parameters
     const templates = {
       explanation: {
         basic: `Introduction aux concepts de base de ${topic}. 
